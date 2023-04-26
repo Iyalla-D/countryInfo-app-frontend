@@ -10,6 +10,12 @@ function App() {
   const [suggestions, setSuggestions] = useState([]);
   const [googleMapsLink, setGoogleMapsLink] = useState("");
   const [filter, setFilter] = useState('');
+  const [filteredCountries, setFilteredCountries] = useState([]);
+
+  const [languageFilter, setLanguageFilter] = useState('');
+  const [currencyFilter, setCurrencyFilter] = useState('');
+  const [regionFilter, setRegionFilter] = useState('');
+  const [subregionFilter, setSubregionFilter] = useState('');
 
   const debounce = (func, wait) => {
     let timeout;
@@ -23,7 +29,12 @@ function App() {
   };
 
   const handleFilterClick = (filterType) => {
-    setFilter(filterType);
+    if (filter === filterType) {
+      setFilter('');
+      setFilteredCountries([]); 
+    } else {
+      setFilter(filterType);
+    }
   };
 
 
@@ -37,16 +48,19 @@ function App() {
     try {
       let response;
       if (filter) {
-        response = await axios.get(`http://localhost:5000/api/country/${filter}/${country || countryInput}`);
+        response = await axios.get(`http://localhost:5000/api/country/${filter}/${countryInput}`);
+        console.log(response.data);
+        setFilteredCountries(response.data);
+        setCountryData(null);
       } else {
         response = await axios.get(`http://localhost:5000/api/country/${country || countryInput}`);
+        setCountryData(response.data);
+        setErrorMessage('');
+        setCountryInput('');
+        setGoogleMapsLink(`https://maps.google.com/maps?q=${response.data.latlng[0]},${response.data.latlng[1]}&z=5&output=embed`);
       }
-      setCountryData(response.data);
-      setErrorMessage('');
-      setCountryInput('');
-  
       
-      setGoogleMapsLink(`https://maps.google.com/maps?q=${response.data.latlng[0]},${response.data.latlng[1]}&z=5&output=embed`);
+      
     } catch (error) {
       console.error('Error fetching country data:', error);
       setErrorMessage(
@@ -54,6 +68,8 @@ function App() {
       );
     }
   };
+  
+
   
   
 
@@ -67,8 +83,14 @@ function App() {
 
   const getSuggestions = async (value) => {
     try {
-      const response = await axios.get(`https://restcountries.com/v3.1/name/${value}`);
-      return response.data.map((country) => country.name.common).slice(0, 5);
+      if (filter) {
+        const response = await axios.get(`https://restcountries.com/v3.1/${filter}/${value}`);
+        return response.data.map((country) => country.region).slice(0, 1);
+      }else{
+        const response = await axios.get(`https://restcountries.com/v3.1/name/${value}`);
+        return response.data.map((country) => country.name.common).slice(0, 5);
+      }
+      
     } catch (error) {
       console.error('Error fetching suggestions:', error);
       return [];
@@ -137,10 +159,30 @@ function App() {
       </div>
 
       <div>
-        <button onClick={() => handleFilterClick('language')}>Language</button>
-        <button onClick={() => handleFilterClick('currency')}>Currency</button>
-        <button onClick={() => handleFilterClick('region')}>Region</button>
-        <button onClick={() => handleFilterClick('subregion')}>Sub-region</button>
+      <button
+          className={filter === 'language' ? 'active-filter' : ''}
+          onClick={() => handleFilterClick('language')}
+        >
+          Language
+        </button>
+        <button
+          className={filter === 'currency' ? 'active-filter' : ''}
+          onClick={() => handleFilterClick('currency')}
+        >
+          Currency
+        </button>
+        <button
+          className={filter === 'region' ? 'active-filter' : ''}
+          onClick={() => handleFilterClick('region')}
+        >
+          Region
+        </button>
+        <button
+          className={filter === 'subregion' ? 'active-filter' : ''}
+          onClick={() => handleFilterClick('subregion')}
+        >
+          Sub-region
+        </button>
       </div>
 
       {errorMessage && (
@@ -149,6 +191,20 @@ function App() {
         </div>
       )}
       
+      
+      {filteredCountries.length > 0 && (
+        <div>
+          <h2>Filtered Countries</h2>
+          <ul>
+            {filteredCountries
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((country, index) => (
+                <li key={index}>{country.name}</li>
+              ))}
+          </ul>
+        </div>
+      )}
+
       {countryData && (
         <div className="country-data">
           <div className="country-flag">
