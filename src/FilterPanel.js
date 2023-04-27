@@ -9,8 +9,10 @@ const FilterPanel = ({
 }) => {
   const [panelOpen, setPanelOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState({ type: null, value: null });
-  const [uniqueRegions, setUniqueRegions] = useState([]);
   const [uniqueLanguages, setUniqueLanguages] = useState([]);
+  const [uniqueCurrencies, setUniqueCurrencies] = useState([]);
+  const [uniqueRegions, setUniqueRegions] = useState([]);
+  const [uniqueSubRegions, setUniqueSubRegions] = useState([]);
 
   const togglePanel = () => {
     setPanelOpen(!panelOpen);
@@ -37,6 +39,15 @@ const FilterPanel = ({
       }
     };
 
+    const fetchAllCurrencies = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/currencies');
+        setUniqueCurrencies(response.data);
+      } catch (error) {
+        console.error('Error fetching currenciess:', error);
+      }
+    };
+
     const fetchAllRegions = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/regions');
@@ -46,8 +57,19 @@ const FilterPanel = ({
       }
     };
 
+    const fetchAllSubRegions = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/subregions');
+        setUniqueSubRegions(response.data);
+      } catch (error) {
+        console.error('Error fetching subregions:', error);
+      }
+    };
+
     fetchAllLanguages();
+    fetchAllCurrencies();
     fetchAllRegions();
+    fetchAllSubRegions();
   }, []);
 
   return (
@@ -84,6 +106,22 @@ const FilterPanel = ({
             >
               Currency
             </button>
+
+            {activeFilter === 'currency' && (
+              <ul className="filter-list">
+                {uniqueCurrencies.map((currency, index) => (
+                  <li
+                    key={index}
+                    onClick={() => {
+                      handleFilterClick('currency', currency);
+                    }}
+                  >
+                    {currency}
+                  </li>
+                ))}
+              </ul>
+            )}
+
             <button
               className={activeFilter === 'region' ? 'active-filter' : ''}
               onClick={() => setActiveFilter('region')}
@@ -112,6 +150,22 @@ const FilterPanel = ({
             >
               Sub-region
             </button>
+
+            {activeFilter === 'subregion' && (
+              <ul className="filter-list">
+                {uniqueSubRegions.map((subregion, index) => (
+                  <li
+                    key={index}
+                    onClick={() => {
+                      handleFilterClick('region', subregion);
+                    }}
+                  >
+                    {subregion}
+                  </li>
+                ))}
+              </ul>
+            )}
+
             <button onClick={handleConfirm}>Confirm</button>
           </div>
         </div>
