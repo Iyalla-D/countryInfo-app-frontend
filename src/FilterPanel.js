@@ -44,7 +44,7 @@ const FilterPanel = ({
         const response = await axios.get('http://localhost:5000/api/currencies');
         setUniqueCurrencies(response.data);
       } catch (error) {
-        console.error('Error fetching currenciess:', error);
+        console.error('Error fetching currencies:', error);
       }
     };
 
@@ -109,14 +109,14 @@ const FilterPanel = ({
 
             {activeFilter === 'currency' && (
               <ul className="filter-list">
-                {uniqueCurrencies.map((currency, index) => (
+                {uniqueCurrencies.map(({ name, symbol }, index) => (
                   <li
                     key={index}
                     onClick={() => {
-                      handleFilterClick('currency', currency);
+                      handleFilterClick('currency', name);
                     }}
                   >
-                    {currency}
+                    {name} ({symbol})
                   </li>
                 ))}
               </ul>
@@ -157,7 +157,7 @@ const FilterPanel = ({
                   <li
                     key={index}
                     onClick={() => {
-                      handleFilterClick('region', subregion);
+                      handleFilterClick('subregion', subregion);
                     }}
                   >
                     {subregion}
