@@ -1,21 +1,18 @@
 import React, { useState} from 'react';
 import axios from 'axios';
 import Autosuggest from 'react-autosuggest';
+import FilterPanel from "./FilterPanel";
 import './App.css';
+import 'font-awesome/css/font-awesome.min.css';
 
 function App() {
   const [countryInput, setCountryInput] = useState('');
   const [countryData, setCountryData] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  const [googleMapsLink, setGoogleMapsLink] = useState("");
-  const [filter, setFilter] = useState('');
+  const [googleMapsLink, setGoogleMapsLink] = useState('');
   const [filteredCountries, setFilteredCountries] = useState([]);
-
-  const [languageFilter, setLanguageFilter] = useState('');
-  const [currencyFilter, setCurrencyFilter] = useState('');
-  const [regionFilter, setRegionFilter] = useState('');
-  const [subregionFilter, setSubregionFilter] = useState('');
+  const [activeFilter, setActiveFilter] = useState(null);
 
   const debounce = (func, wait) => {
     let timeout;
@@ -28,18 +25,22 @@ function App() {
     };
   };
 
-  const handleFilterClick = (filterType) => {
-    if (filter === filterType) {
-      setFilter('');
-      setFilteredCountries([]); 
-    } else {
-      setFilter(filterType);
+  const handleOptionClick = async (filterType, filterValue) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/country/${filterType}/${filterValue}`
+      );
+      setFilteredCountries(response.data);
+    } catch (error) {
+      console.error(`Error fetching countries by ${filterType}:`, error);
     }
   };
 
 
   const handleSubmit = async (event, country) => {
-    event.preventDefault();
+    if (event) {
+      event.preventDefault();
+    }
 
     if (!country && !countryInput) {
       return;
@@ -47,20 +48,11 @@ function App() {
 
     try {
       let response;
-      if (filter) {
-        response = await axios.get(`http://localhost:5000/api/country/${filter}/${countryInput}`);
-        console.log(response.data);
-        setFilteredCountries(response.data);
-        setCountryData(null);
-      } else {
-        response = await axios.get(`http://localhost:5000/api/country/${country || countryInput}`);
-        setCountryData(response.data);
-        setErrorMessage('');
-        setCountryInput('');
-        setGoogleMapsLink(`https://maps.google.com/maps?q=${response.data.latlng[0]},${response.data.latlng[1]}&z=5&output=embed`);
-      }
-      
-      
+      response = await axios.get(`http://localhost:5000/api/country/${country || countryInput}`);
+      setCountryData(response.data);
+      setErrorMessage('');
+      setCountryInput('');
+      setGoogleMapsLink(`https://maps.google.com/maps?q=${response.data.latlng[0]},${response.data.latlng[1]}&z=5&output=embed`);
     } catch (error) {
       console.error('Error fetching country data:', error);
       setErrorMessage(
@@ -83,14 +75,8 @@ function App() {
 
   const getSuggestions = async (value) => {
     try {
-      if (filter) {
-        const response = await axios.get(`https://restcountries.com/v3.1/${filter}/${value}`);
-        return response.data.map((country) => country.region).slice(0, 1);
-      }else{
-        const response = await axios.get(`https://restcountries.com/v3.1/name/${value}`);
-        return response.data.map((country) => country.name.common).slice(0, 5);
-      }
-      
+      const response = await axios.get(`https://restcountries.com/v3.1/name/${value}`);
+      return response.data.map((country) => country.name.common).slice(0, 5);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
       return [];
@@ -159,30 +145,11 @@ function App() {
       </div>
 
       <div>
-      <button
-          className={filter === 'language' ? 'active-filter' : ''}
-          onClick={() => handleFilterClick('language')}
-        >
-          Language
-        </button>
-        <button
-          className={filter === 'currency' ? 'active-filter' : ''}
-          onClick={() => handleFilterClick('currency')}
-        >
-          Currency
-        </button>
-        <button
-          className={filter === 'region' ? 'active-filter' : ''}
-          onClick={() => handleFilterClick('region')}
-        >
-          Region
-        </button>
-        <button
-          className={filter === 'subregion' ? 'active-filter' : ''}
-          onClick={() => handleFilterClick('subregion')}
-        >
-          Sub-region
-        </button>
+        <FilterPanel
+            handleOptionClick={handleOptionClick}
+            activeFilter={activeFilter}
+            setActiveFilter={setActiveFilter}
+          />      
       </div>
 
       {errorMessage && (
@@ -196,11 +163,13 @@ function App() {
         <div>
           <h2>Filtered Countries</h2>
           <ul>
-            {filteredCountries
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((country, index) => (
-                <li key={index}>{country.name}</li>
-              ))}
+          {filteredCountries
+            .sort((a, b) => a.name.common.localeCompare(b.name.common))
+            .map((country, index) => (
+              <li key={index} onClick={() => handleSubmit(null, country.name.common)} className="clickable-country">
+                <i className="fa fa-info-circle" aria-hidden="true"></i> {country.name.common}
+              </li>
+          ))}
           </ul>
         </div>
       )}

@@ -196,3 +196,41 @@ li {
   color: white;
   border-color: #007bff;
 }
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.filter-panel-container {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.clickable-country {
+  cursor: pointer;
+  color: #007bff;
+  margin-bottom: 5px;
+}
+
+.clickable-country:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+.clickable-country .fa-info-circle {
+  margin-right: 5px;
+}
