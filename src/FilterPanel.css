@@ -15,3 +15,6 @@
     background-color: #f0f0f0;
   }
   
+  .filter-list li.selected {
+    background-color: #cbcaca;
+  }

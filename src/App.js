@@ -25,14 +25,16 @@ function App() {
     };
   };
 
-  const handleOptionClick = async (filterType, filterValue) => {
+  const handleOptionClick = async (filters) => {
     try {
-      const response = await axios.get(
-        `http://localhost:5000/api/country/${filterType}/${filterValue}`
-      );
+      const queryParams = new URLSearchParams();
+      filters.forEach((filter) => {
+        queryParams.append(filter.type, filter.value);
+      });
+      const response = await axios.get(`http://localhost:5000/api/country/filter/filters?${queryParams}`);
       setFilteredCountries(response.data);
     } catch (error) {
-      console.error(`Error fetching countries by ${filterType}:`, error);
+      console.error('Error fetching countries by filters:', error);
     }
   };
 
@@ -61,11 +63,6 @@ function App() {
     }
   };
   
-
-  
-  
-
-
   const handleKeyPress = (event) => {
     const regex = /^[a-zA-Z\s]*$/;
     if (!regex.test(event.key)) {
@@ -75,7 +72,7 @@ function App() {
 
   const getSuggestions = async (value) => {
     try {
-      const response = await axios.get(`https://restcountries.com/v3.1/name/${value}`);
+      const response = await axios.get(`https://restcountries.com/v3.1/names/${value}`);
       return response.data.map((country) => country.name.common).slice(0, 5);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
