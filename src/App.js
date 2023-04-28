@@ -17,9 +17,6 @@ function App() {
   const [Empty, setEmpty] = useState(false);
   const [filterAttempted, setFilterAttempted] = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false);
-  
-
-
 
   const debounce = (func, wait) => {
     let timeout;
@@ -38,7 +35,7 @@ function App() {
       filters.forEach((filter) => {
         queryParams.append(filter.type, filter.value);
       });
-      const response = await axios.get(`http://localhost:5000/api/country/filter/filters?${queryParams}`);
+      const response = await axios.get(`https://countryinfo-app-backend.herokuapp.com/api/country/filter/filters?${queryParams}`);
       setFilteredCountries(response.data);
       setFilterAttempted(true);
       setSearchPerformed(true);
@@ -78,16 +75,17 @@ function App() {
     }
 
     try {
-      setShowOverlay(true);
       let response;
-      response = await axios.get(`http://localhost:5000/api/country/${country || countryInput}`);
-      setCountryData(response.data);
+      response = await axios.get(`https://countryinfo-app-backend.herokuapp.com/api/country/${country || countryInput}`);
       setErrorMessage('');
+      setCountryData(response.data);
+      setShowOverlay(true);
     } catch (error) {
       console.error('Error fetching country data:', error);
       setErrorMessage(
         `Error fetching data for "${country || countryInput}". Please try again.`
       );
+      setShowOverlay(false);
     }
   };
 
@@ -184,13 +182,9 @@ function App() {
         </div>
       </div>
       </div>
-        
-      
-      
-        
       
       <div>
-        {showOverlay && (
+        {showOverlay && countryData && (
           <Display countryData={countryData} onClose={handleCloseOverlay}/>
         )}
       </div>

@@ -49,7 +49,7 @@ const FilterPanel = ({
   useEffect(() => {
     const fetchAllLanguages = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/languages');
+        const response = await axios.get('http://countryinfo-app-backend.herokuapp.com/api/languages');
         setUniqueLanguages(response.data);
       } catch (error) {
         console.error('Error fetching languages:', error);
@@ -58,7 +58,7 @@ const FilterPanel = ({
 
     const fetchAllCurrencies = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/currencies');
+        const response = await axios.get('http://countryinfo-app-backend.herokuapp.com/api/currencies');
         setUniqueCurrencies(response.data);
       } catch (error) {
         console.error('Error fetching currencies:', error);
@@ -67,7 +67,7 @@ const FilterPanel = ({
 
     const fetchAllRegions = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/regions');
+        const response = await axios.get('http://countryinfo-app-backend.herokuapp.com/api/regions');
         setUniqueRegions(response.data);
       } catch (error) {
         console.error('Error fetching regions:', error);
@@ -76,7 +76,7 @@ const FilterPanel = ({
 
     const fetchAllSubRegions = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/subregions');
+        const response = await axios.get('http://countryinfo-app-backend.herokuapp.com/api/subregions');
         setUniqueSubRegions(response.data);
       } catch (error) {
         console.error('Error fetching subregions:', error);
