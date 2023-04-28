@@ -1,7 +1,8 @@
-import React, { useState} from 'react';
+import React, { useState , useEffect} from 'react';
 import axios from 'axios';
 import Autosuggest from 'react-autosuggest';
 import FilterPanel from "./FilterPanel";
+import Display from './Display';
 import './App.css';
 import 'font-awesome/css/font-awesome.min.css';
 
@@ -10,9 +11,15 @@ function App() {
   const [countryData, setCountryData] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  const [googleMapsLink, setGoogleMapsLink] = useState('');
   const [filteredCountries, setFilteredCountries] = useState([]);
   const [activeFilter, setActiveFilter] = useState(null);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [Empty, setEmpty] = useState(false);
+  const [filterAttempted, setFilterAttempted] = useState(false);
+  const [searchPerformed, setSearchPerformed] = useState(false);
+  
+
+
 
   const debounce = (func, wait) => {
     let timeout;
@@ -33,11 +40,33 @@ function App() {
       });
       const response = await axios.get(`http://localhost:5000/api/country/filter/filters?${queryParams}`);
       setFilteredCountries(response.data);
+      setFilterAttempted(true);
+      setSearchPerformed(true);
+      
     } catch (error) {
       console.error('Error fetching countries by filters:', error);
     }
   };
 
+  useEffect(() => {
+    setEmpty(filteredCountries.length === 0);
+  }, [filteredCountries]);
+
+
+  useEffect(() => {
+    if (searchPerformed) {
+      document.body.classList.remove("disable-scroll");
+    } else {
+      document.body.classList.add("disable-scroll");
+    }
+  
+    return () => {
+      document.body.classList.remove("disable-scroll");
+    };
+  }, [searchPerformed]);
+  
+  
+  
 
   const handleSubmit = async (event, country) => {
     if (event) {
@@ -49,18 +78,21 @@ function App() {
     }
 
     try {
+      setShowOverlay(true);
       let response;
       response = await axios.get(`http://localhost:5000/api/country/${country || countryInput}`);
       setCountryData(response.data);
       setErrorMessage('');
-      setCountryInput('');
-      setGoogleMapsLink(`https://maps.google.com/maps?q=${response.data.latlng[0]},${response.data.latlng[1]}&z=5&output=embed`);
     } catch (error) {
       console.error('Error fetching country data:', error);
       setErrorMessage(
         `Error fetching data for "${country || countryInput}". Please try again.`
       );
     }
+  };
+
+  const handleCloseOverlay = () => {
+    setShowOverlay(false);
   };
   
   const handleKeyPress = (event) => {
@@ -72,7 +104,7 @@ function App() {
 
   const getSuggestions = async (value) => {
     try {
-      const response = await axios.get(`https://restcountries.com/v3.1/names/${value}`);
+      const response = await axios.get(`https://restcountries.com/v3.1/name/${value}`);
       return response.data.map((country) => country.name.common).slice(0, 5);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
@@ -124,29 +156,43 @@ function App() {
   };
 
   return (
-    <div className="container">
-      <h1>Country Information</h1>
-      <div className="search-form">
-        <form onSubmit={handleSubmit}>
-        <Autosuggest
-            suggestions={suggestions}
-            onSuggestionsFetchRequested={onSuggestionsFetchRequested}
-            onSuggestionsClearRequested={onSuggestionsClearRequested}
-            getSuggestionValue={getSuggestionValue}
-            renderSuggestion={renderSuggestion}
-            inputProps={inputProps}
-            shouldRenderSuggestions={() => true}
-            onSuggestionSelected={handleSuggestionSelected}/>
-          <button type="submit">Get Data</button>
-        </form >
-      </div>
+    <div className={`container${searchPerformed ? ' hide-scrollbar' : ''}`}>
+      <div className={`main-content${searchPerformed ? '' : ' centered'}`}>
+        <h1>Country Information</h1>
+        <div className="search-container">
+        <div className="search-form">
+          <form onSubmit={handleSubmit}>
+          <Autosuggest
+              suggestions={suggestions}
+              onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+              onSuggestionsClearRequested={onSuggestionsClearRequested}
+              getSuggestionValue={getSuggestionValue}
+              renderSuggestion={renderSuggestion}
+              inputProps={inputProps}
+              shouldRenderSuggestions={(value) => value.trim().length > 0}
+              onSuggestionSelected={handleSuggestionSelected}/>
+            <button type="submit">View</button>
+          </form >
+        </div>
 
+        <div>
+          <FilterPanel
+              handleOptionClick={handleOptionClick}
+              activeFilter={activeFilter}
+              setActiveFilter={setActiveFilter}
+            />      
+        </div>
+      </div>
+      </div>
+        
+      
+      
+        
+      
       <div>
-        <FilterPanel
-            handleOptionClick={handleOptionClick}
-            activeFilter={activeFilter}
-            setActiveFilter={setActiveFilter}
-          />      
+        {showOverlay && (
+          <Display countryData={countryData} onClose={handleCloseOverlay}/>
+        )}
       </div>
 
       {errorMessage && (
@@ -159,7 +205,7 @@ function App() {
       {filteredCountries.length > 0 && (
         <div>
           <h2>Filtered Countries</h2>
-          <ul>
+          <ul className="country-list">
           {filteredCountries
             .sort((a, b) => a.name.common.localeCompare(b.name.common))
             .map((country, index) => (
@@ -170,83 +216,13 @@ function App() {
           </ul>
         </div>
       )}
-
-      {countryData && (
-        <div className="country-data">
-          <div className="country-flag">
-            
-            <img src={countryData.flag} 
-              alt={`${countryData.flag_alt} flag`} 
-              style={{ marginRight: "10px", verticalAlign: "middle", border: "2px solid", borderRadius: "10px"  
-            }}/>
-
-          </div>
-          <h2>
-            {countryData.name}
-          </h2>
-          <p>
-            <strong>Capital:</strong> {countryData.capital}
-          </p>
-          <p>
-            <strong>Population:</strong> {countryData.population.toLocaleString()}
-          </p>
-          <p>
-            <strong>Area:</strong> {countryData.area.toLocaleString()} km²
-          </p>
-          <p></p>
-          {countryData.officialName && (
-            <p>
-              <strong>Official Name:</strong> {countryData.officialName}
-            </p>
-          )}
-          {countryData.nativeNames && (
-            <div>
-              <strong>Native Names:</strong>
-              <ul>
-                {Object.entries(countryData.nativeNames).map(([key, value]) => (
-                  <li key={key}>
-                    {value.common} ({value.official})
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {countryData.languages && (
-            <div>
-              <strong>Languages:</strong>
-              <ul>
-                {Object.entries(countryData.languages).map(([key, value]) => (
-                  <li key={key}>
-                    {value}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {countryData.currency && (
-            <p>
-              <strong>Currency:</strong> {countryData.currency.name} ({countryData.currency.symbol})
-            </p>
-          )}
-
-          {googleMapsLink && (
-            <div style={{ width: '100%', height: '400px', marginBottom: '20px' }}>
-              <iframe
-                title="Google Maps"
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                src={googleMapsLink}
-                allowFullScreen
-              ></iframe>
-            </div>
-          )}
-
-
+      
+      {Empty === true && filterAttempted &&(
+        <div>
+          <h2>No Filtered Countries</h2>
         </div>
       )}
 
-      
     </div>
     
   );
