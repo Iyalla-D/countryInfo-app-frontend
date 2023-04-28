@@ -171,6 +171,14 @@ li {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
   width: 100%;
+  opacity: 0;
+  animation: fadeIn 1s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 767px) {
@@ -247,6 +255,7 @@ li {
   cursor: pointer;
   color: #007bff;
   margin-bottom: 5px;
+  transition: color 0.3s, text-decoration 0.3s;
 }
 
 .clickable-country:hover {
